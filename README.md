@@ -36,7 +36,7 @@
 /plugin marketplace add MarkShawn2020/lovcc
 
 # Install plugin
-/plugin install lovcc@lovcc-marketplace
+/plugin install lovstudio@lovstudio-marketplace
 ```
 
 ## Skills
