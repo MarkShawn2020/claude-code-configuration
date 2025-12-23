@@ -23,7 +23,29 @@ jobs:
         id: tag
         run: echo "tag=${{ github.event.inputs.tag || github.ref_name }}" >> $GITHUB_OUTPUT
 
+      - name: Extract release notes
+        id: notes
+        run: |
+          VERSION="${{ steps.tag.outputs.tag }}"
+          VERSION_NUM="${VERSION#v}"
+          NOTES=""
+          if [ -f CHANGELOG.md ]; then
+            NOTES=$(awk -v ver="$VERSION_NUM" '
+              /^## / { if (found) exit; if ($2 == ver) { found=1; next } }
+              found { print }
+            ' CHANGELOG.md)
+          fi
+          if [ -n "$NOTES" ]; then
+            echo "has_notes=true" >> $GITHUB_OUTPUT
+            echo 'notes<<EOF' >> $GITHUB_OUTPUT
+            echo "$NOTES" >> $GITHUB_OUTPUT
+            echo 'EOF' >> $GITHUB_OUTPUT
+          else
+            echo "has_notes=false" >> $GITHUB_OUTPUT
+          fi
+
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag.outputs.tag }}
-          generate_release_notes: true
+          body: ${{ steps.notes.outputs.has_notes == 'true' && steps.notes.outputs.notes || '' }}
+          generate_release_notes: ${{ steps.notes.outputs.has_notes != 'true' }}
